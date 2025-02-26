@@ -21,7 +21,7 @@ A secure TLS echo server written in Go that demonstrates advanced networking con
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yourusername/go-tls-echo-server.git
+   git clone https://github.com/evans-sudo/go-tls-echo-server.git
    cd go-tls-echo-server
    ```
 

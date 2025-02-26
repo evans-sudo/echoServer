@@ -14,14 +14,12 @@ A secure TLS echo server written in Go that demonstrates advanced networking con
 ## Prerequisites
 
 - Go 1.16 or later
-- A valid TLS certificate and key (e.g., `server.crt` and `server.key`)
 - Prometheus (if you wish to scrape the metrics)
 
 ## Installation
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/evans-sudo/go-tls-echo-server.git
    cd go-tls-echo-server
    ```
 

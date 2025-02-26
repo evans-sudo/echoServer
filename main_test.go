@@ -1,41 +1,59 @@
 package main
 
+
 import (
-	"bytes"
-	"io"
-	"net"
-	"testing"
-	"time"
+    "crypto/tls"
+    "io/ioutil"
+    "net/http"
+    "testing"
+    "time"
 )
 
-func TestEcho(t *testing.T) {
-	// Use net.Pipe to create a pair of connected endpoints.
-	clientConn, serverConn := net.Pipe()
-	defer clientConn.Close()
-	defer serverConn.Close()
+func TestEchoServer(t *testing.T) {
+    go main() // Start the echo server in a goroutine
 
-	// Run the echo function in a goroutine.
-	go echo(serverConn)
+    time.Sleep(2 * time.Second) // Give the server a moment to start
 
-	// Write a test message from the client side.
-	testMsg := []byte("Hello, Echo Server!")
-	_, err := clientConn.Write(testMsg)
-	if err != nil {
-		t.Fatalf("Failed to write to connection: %v", err)
-	}
+    // Test the echo functionality
+    conn, err := tls.Dial("tcp", "localhost:20080", &tls.Config{InsecureSkipVerify: true})
+    if err != nil {
+        t.Fatalf("Failed to connect to server: %v", err)
+    }
+    defer conn.Close()
 
-	// Give the echo goroutine some time to process.
-	time.Sleep(100 * time.Millisecond)
+    message := "Hello, Echo Server!"
+    _, err = conn.Write([]byte(message))
+    if err != nil {
+        t.Fatalf("Failed to send message: %v", err)
+    }
 
-	// Read the echoed message.
-	echoed := make([]byte, len(testMsg))
-	_, err = io.ReadFull(clientConn, echoed)
-	if err != nil {
-		t.Fatalf("Failed to read echoed message: %v", err)
-	}
+    buffer := make([]byte, len(message))
+    _, err = conn.Read(buffer)
+    if err != nil {
+        t.Fatalf("Failed to read message: %v", err)
+    }
 
-	// Verify that the echoed message matches the original message.
-	if !bytes.Equal(testMsg, echoed) {
-		t.Errorf("Expected echoed message %q, got %q", testMsg, echoed)
-	}
+    if string(buffer) != message {
+        t.Fatalf("Expected %q but got %q", message, string(buffer))
+    }
+
+    // Test the metrics endpoint
+    resp, err := http.Get("http://localhost:9090/metrics")
+    if err != nil {
+        t.Fatalf("Failed to get metrics: %v", err)
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        t.Fatalf("Expected status code 200 but got %d", resp.StatusCode)
+    }
+
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        t.Fatalf("Failed to read response body: %v", err)
+    }
+
+    if len(body) == 0 {
+        t.Fatalf("Expected non-empty response body")
+    }
 }
